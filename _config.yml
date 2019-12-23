@@ -12,13 +12,13 @@ github_repo: "https://github.com/shfshf/shfshf.github.io.git" # you code reposit
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
 sidebar-about-description: "Goals determine what you going to be!"
-sidebar-avatar: /img/shf-bolg-logo.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
+sidebar-avatar: img/shf.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
 
 # SNS settings
 RSS: false
- weibo_username:     寒城如风
+# weibo_username:     寒城如风
 # zhihu_username:     qiubaiying
 github_username:    shfshf
 # facebook_username:  baiying.qiu.7
