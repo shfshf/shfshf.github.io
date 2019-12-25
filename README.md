@@ -53,12 +53,12 @@
 
 ```
 # Site settings
-title: BY Blog                    # 你的博客网站标题
-SEOTitle: 柏荧的博客 | BY Blog		# SEO 标题
+title: SHF Blog                    # 你的博客网站标题
+SEOTitle: 寒风的博客 | SHF Blog		# SEO 标题
 description: "Hey"	   	   # 随便说点，描述一下
 
 # SNS settings      
-github_username: qiubaiying     # 你的github账号
+github_username: shfshf     # 你的github账号
 jianshu_username: e71990ada2fd  # 你的简书ID。
 
 # Build settings
@@ -79,7 +79,7 @@ layout:     post
 title:      定时器 你真的会使用吗？
 subtitle:   iOS定时器详解
 date:       2016-12-13
-author:     BY
+author:     SHF
 header-img: img/post-bg-ios9-web.jpg
 catalog: 	 true
 tags:
