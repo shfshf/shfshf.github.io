@@ -34,18 +34,18 @@ ___使用 Rasa NLU + Rasa Core，开发者可以迅速构建自己的chatbot___
 
 ### 2.2 Task-Bot
 任务型对话系统示意图：
-![rasa](/img/rasa1.jpeg)
+![rasa](/img/rasa1.png)
 
 任务型对话主要包括四部分: 语音识别(ASR)，自然语言理解(NLU)，对话管理(DM)，最后是自然语言生成(NLG)。
 
 下面是一个订餐应用的例子:
-![rasa](/img/rasa2.jpeg)
+![rasa](/img/rasa2.png)
 
 接下来分别来看每个模块具体实现的方式
 
 首先是自然语言理解(NLU)。做自然语言理解首先要有一种表示自然语言含义的形式，一般用传统的三元组方式即：
 action, slot , value。action就是意图，slot是需要填充的槽值，value是对应的值。
-![rasa](/img/rasa3.jpeg)
+![rasa](/img/rasa3.png)
 
 具体可以用哪些技术做这些事情呢？下面列出了几个方法。
 * **语法分析**，可以通过语法规则去分析一句话，得到这句活是疑问句还是肯定句，继而分析出用户意图。相应的也可以通过语法结构中找到对应的槽值。
@@ -55,10 +55,10 @@ action, slot , value。action就是意图，slot是需要填充的槽值，value
 ![rasa](/img/rasa4.png)
 
 对话状态应该包含持续对话所需要的各种信息。DST的主要作用是记录当前对话状态，作为决策模块的训练数据。
-![rasa](/img/rasa5.jpeg)
+![rasa](/img/rasa5.png)
 
 系统如何做出反馈动作？
-![rasa](/img/rasa6.jpeg)
+![rasa](/img/rasa6.png)
 
 # 3. Rasa 结构
 
