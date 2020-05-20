@@ -62,6 +62,82 @@ action, slot , value。action就是意图，slot是需要填充的槽值，value
 
 # 3. Rasa 结构
 
+### 3.1 Rasa NLU
+
+Rasa NLU负责提供自然语言理解的工具，包括意图分类和实体抽取。
+
+举例来说，对于输入：
+```
+帮我找一间市中心的西餐厅
+```
+Rasa NLU的输出是：
+```
+{
+  "intent": "search_restaurant",
+  "entities": {
+    "cuisine" : "西餐厅",
+    "location" : "市中心"
+  }
+}
+```
+其中，*Intent* 代表用户意图。*Entities* 即实体，代表用户输入语句的细节信息。
+
+### 3.2 预定义的pipeline
+
+rasa nlu 支持不同的 Pipeline，其后端实现可支持 spaCy、MITIE、MITIE + sklearn、tensorflow等，其中 spaCy 是官方推荐的。
+
+本文使用的 pipeline 为 MITIE+Jieba+sklearn， rasa nlu 的配置文件为 ivr_chatbot.yml如下：
+```
+language: "zh"
+project: "ivr_nlu"
+fixed_model_name: "demo"
+path: "models"
+pipeline:
+- name: "nlp_mitie"
+  model: "data/total_word_feature_extractor.dat"  // 加载 mitie 模型
+- name: "tokenizer_jieba"  // 使用 jieba 进行分词
+- name: "ner_mitie"  // mitie 的命名实体识别
+- name: "ner_synonyms"  // 同义词替换
+- name: "intent_entity_featurizer_regex" //
+- name: "intent_featurizer_mitie"  // 特征提取
+- name: "intent_classifier_sklearn"  // sklearn 的意图分类模型
+```
+
+### 3.3 Preparation Work
+
+由于在 pipeline 中使用了 MITIE，所以需要一个训练好的 MITIE 模型。MITIE 模型是非监督训练得到的，类似于 word2vec 中的 word embedding，
+需要大量的中文语料，由于训练这个模型对内存要求较高，并且耗时很长，这里直接使用了网友分享的中文 wikipedia 和百度百科语料生成的模型文件 total_word_feature_extractor_chi.dat。
+
+实际应用中，如果做某个特定领域的 NLU 并收集了很多该领域的语料，可以自己去训练 MITIE 模型，也可以用attention，lstm，bert 来预训练词向量。
+
+### 3.4 构建 rasa_nlu 语料
+
+得到 MITIE 词向量模型以后便可以借助其训练 Rasa NLU 模型，这里需要使用标注好的数据来训练 rasa_nlu，标注的数据格式如下：
+Rasa 也很贴心的提供了数据标注平台[*rasa-nlu-trainer*](https://rasahq.github.io/rasa-nlu-trainer/) 供用户标注数据。这里我们使用项目里提供的标注好的数据（mobile_nlu_data.json）直接进行训练。
+```
+# mobile_nlu_data.json
+{
+        "text": "帮我查一下我十二月消费多少",
+        "intent": "request_search",
+        "entities": [
+          {
+            "start": 9,
+            "end": 11,
+            "value": "消费",
+            "entity": "item"
+          },
+          {
+            "start": 6,
+            "end": 9,
+            "value": "十二月",
+            "entity": "time"
+          }
+        ]
+},
+.....
+
+```
+### 3.5 训练 rasa_nlu 模型
 
 
 
