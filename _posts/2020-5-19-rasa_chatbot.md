@@ -102,6 +102,10 @@ pipeline:
 - name: "intent_featurizer_mitie"  // 特征提取
 - name: "intent_classifier_sklearn"  // sklearn 的意图分类模型
 ```
+每个组件都可以实现Component基类中的多个方法;在管道中，这些不同的方法将按特定的顺序调用。
+假设，添加了以下管道到配置："pipeline": ["Component A", "Component B", "Last Component"]。
+下图为该管道训练时的调用顺序：![rasa](/img/rasa7.png)
+
 
 ### 3.3 Preparation Work
 
@@ -138,6 +142,8 @@ Rasa 也很贴心的提供了数据标注平台[*rasa-nlu-trainer*](https://rasa
 
 ```
 ### 3.5 训练 rasa_nlu 模型
+
+
 
 
 
