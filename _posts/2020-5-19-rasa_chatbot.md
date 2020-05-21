@@ -62,7 +62,7 @@ action, slot , value。action就是意图，slot是需要填充的槽值，value
 
 # 3. Rasa 结构
 
-### 3.1 Rasa NLU
+## 3.1 Rasa NLU
 
 Rasa NLU负责提供自然语言理解的工具，包括意图分类和实体抽取。
 
@@ -82,7 +82,7 @@ Rasa NLU的输出是：
 ```
 其中，*Intent* 代表用户意图。*Entities* 即实体，代表用户输入语句的细节信息。
 
-### 3.2 预定义的pipeline
+### 3.1.1 预定义的pipeline
 
 rasa nlu 支持不同的 Pipeline，其后端实现可支持 spaCy、MITIE、MITIE + sklearn、tensorflow等，其中 spaCy 是官方推荐的。
 
@@ -103,18 +103,21 @@ pipeline:
 - name: "intent_classifier_sklearn"  // sklearn 的意图分类模型
 ```
 每个组件都可以实现Component基类中的多个方法;在管道中，这些不同的方法将按特定的顺序调用。
+
 假设，添加了以下管道到配置："pipeline": ["Component A", "Component B", "Last Component"]。
 下图为该管道训练时的调用顺序：![rasa](/img/rasa7.png)
 
+在使用create函数创建第一个组件之前，将创建一个所谓的 context上下文(仅是一个python dict)。此context上下文用于在组件之间传递信息。
+例如，一个组件可以计算训练数据的特征向量，将其存储在上下文中，另一个组件可以从context上下文中检索这些特征向量并进行意图分类。
 
-### 3.3 Preparation Work
+### 3.1.2 Preparation Work
 
 由于在 pipeline 中使用了 MITIE，所以需要一个训练好的 MITIE 模型。MITIE 模型是非监督训练得到的，类似于 word2vec 中的 word embedding，
 需要大量的中文语料，由于训练这个模型对内存要求较高，并且耗时很长，这里直接使用了网友分享的中文 wikipedia 和百度百科语料生成的模型文件 total_word_feature_extractor_chi.dat。
 
-实际应用中，如果做某个特定领域的 NLU 并收集了很多该领域的语料，可以自己去训练 MITIE 模型，也可以用attention，lstm，bert 来预训练词向量。
+实际应用中，如果做某个特定领域的 NLU 并收集了很多该领域的语料，可以自己去训练 MITIE 模型，也可以用attention，bilstm，bert 来预训练词向量。
 
-### 3.4 构建 rasa_nlu 语料
+### 3.1.3 构建 rasa_nlu 语料
 
 得到 MITIE 词向量模型以后便可以借助其训练 Rasa NLU 模型，这里需要使用标注好的数据来训练 rasa_nlu，标注的数据格式如下：
 Rasa 也很贴心的提供了数据标注平台[*rasa-nlu-trainer*](https://rasahq.github.io/rasa-nlu-trainer/) 供用户标注数据。这里我们使用项目里提供的标注好的数据（mobile_nlu_data.json）直接进行训练。
@@ -141,11 +144,109 @@ Rasa 也很贴心的提供了数据标注平台[*rasa-nlu-trainer*](https://rasa
 .....
 
 ```
-### 3.5 训练 rasa_nlu 模型
+### 3.1.4 训练 rasa_nlu 模型
+```
+python -m rasa_nlu.train --data ./data/mobile_nlu_data.json \
+    --config ivr_chatbot.yml \
+    --path projects \
+    --fixed_model_name demo \
+    --project ivr_nlu
+```
+### 3.1.5 测试 rasa nlu
+```
+$ python httpserver.py
+$ curl -X POST localhost:1235/parse -d '{"q":"我的流量还剩多少"}' | python -m json.tool
+{
+    'q': '我的流量还剩多少', 
+    'intent': 'request_search', 
+    'entities': {
+        'item': '流量'
+    }
+}
+```
+## 3.2 Rasa Core
+ 
+Rasa 整体框架 ![rasa](/img/rasa8.png)
 
+### Action
+`action`是对系统响应的抽象。Rasa将对话管理视作一个分类问题，每轮都会在预先设定好的`action`集合中选出一个类别。Rasa Core定义了3中`action`：
+* `default action`：系统预先定义好的动作，如`action_listen`、`action_restart`、`action_default_fallback`
+* `utter action`：一般以`utter_`开头，这种action就只会单纯地给用户返回文本消息。这类的`action`无需具体实现代码，只需在配置文件中指定其对应的相应文本模板即可。
+* `custom action`：用户可以任意编写此类`action`的代码。用户一般需要自己架设一个额外服务，然后在实现`action`时，让代码请求这个服务。
 
+### Tracker
+`Tracker`是用于追踪对话状态的模块。当用户输入被解析后，会传入`Tracker`进行更新，然后系统会读取`Tracker`里的信息，作为策略判断的输入。
 
+目前支持的`tracker`：
+* InMemoryTrackerStore (default)
+* RedisTrackerStore
+* MongoTrackerStore
+* Custom Tracker Store
 
+### Events
+`Events`用于描述一个对话过程中任何可能发生的事情。
+
+### Dispatcher
+`Dispatcher`的作用是将消息以各种形式发送给用户。
+
+### Action + Dispatcher + Tracker + Events：
+当`action`被执行的时候，通常会将一个`tracker`对象传进去。这样它就可以利用各种相关的信息，比如`slots`、之前的`utterance`还有之前的`action`。
+
+`action`被执行的时候，通常会调用`dispatcher`将消息返还给用户。执行过程本身并不直接修改`tracker`，但是执行的完成后可能会返回`events`，`tracker`可以消费这些`event`，并更新状态。
+
+### Policy
+`policy`的输入是`tracker`记录的当前对话状态，输出是一个系统响应`action`。
+
+`policy`包含一个`featurizer`。一个`featurizer`可以创造一个代表当前对话状态的向量。
+
+特征包括以下三部分：
+* 1.上轮动作
+* 2.上轮的intent和entities
+* 3.本轮的slots
+
+一个很重要的超参`max_history`：指定了要考虑多少个之前的状态。通常取值为 3-6 。
+
+### Story
+所谓的`story`有点像剧本，描述可能出现的对话场景。实际上`story`就是一个个用户输入`intent(entities)`和系统设定的输出`action`用于`policy`的训练。
+
+格式：
+```
+## story名称
+* 用户的intent或者entity
+- 系统的action
+```
+etc：
+```
+## interactive_story_4
+## 天气/时间 + 地点 + 时间
+* request_weather{"date_time": "明天"}
+    - weather_form
+    - form{"name": "weather_form"}
+    - slot{"date_time": "明天"}
+    - slot{"requested_slot": "address"}
+* form: inform{"address": "广州"}
+    - form: weather_form
+    - slot{"address": "广州"}
+    - form{"name": null}
+    - slot{"requested_slot": null}
+* inform{"date_time": "后天"} OR request_weather{"date_time": "后天"}
+    - weather_form
+    - form{"name": "weather_form"}
+    - slot{"date_time": "明天"}
+    - slot{"address": "广州"}
+    - slot{"date_time": "后天"}
+    - form{"name": null}
+    - slot{"requested_slot": null}
+* thanks
+    - utter_answer_thanks
+```
+### Interactive learning
+
+交互式，让用户在每一次机器做出决定之后，给与反馈。
+
+对于很难手动设计的边界情况非常有效。
+
+原理：每次系统给出动作的时候，收集用户的 y/n 的信息，生成新的训练数据，对模型`fine-tune`。
 
 
 
