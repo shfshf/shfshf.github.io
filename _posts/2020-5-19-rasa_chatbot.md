@@ -242,15 +242,69 @@ etc：
 ```
 ### Domain
 domain可以理解为机器的知识库，其中定义了意图，动作，以及对应动作所反馈的内容。
+
 | 标识 | 说明 |
-| :------：| :------: |
+| :-----: | :----: |
 | intents | 意图 |
 | actions | 动作 |
 | templates | 回答模板 |
 | entities | 实体 |
 | slots | 词槽 |
-```
 
+```
+slots:
+  time:
+    type: text
+  phone_number:
+    type: text
+  price:
+    type: text
+  ...
+
+intents:
+  - greet
+  - request_search
+  - deny
+  - inform_other_phone
+  ...
+
+entities:
+  - item
+  - time
+  - phone_number
+  - price
+  ...
+
+templates:
+  utter_greet:
+    - "您好!，我是机器人小热，很高兴为您服务。"
+    - "你好!，我是小热，可以帮您办理流量套餐，话费查询等业务。"
+    - "hi!，人家是小热，有什么可以帮您吗。"
+  utter_default:
+    - "您说什么"
+    - "您能再说一遍吗，我没听清"
+  utter_thanks:
+    - "不用谢"
+    - "我应该做的"
+    - "您开心我就开心"
+  utter_ask_time:
+    - "你想查哪个时间段的"
+    - "你想查几月份的"
+  utter_ask_package:
+    - "我们现在支持办理流量套餐：套餐一：二十元包月三十兆；套餐二：四十元包月八十兆，请问您需要哪个？"
+    - "我们有如下套餐供您选择：套餐一：二十元包月三十兆；套餐二：四十元包月八十兆，请问您需要哪个？"
+  utter_ack_management:
+    - "已经为您办理好了{item}"
+  ...
+
+actions:
+  - utter_greet
+  - utter_default
+  - utter_thanks
+  - utter_ask_time
+  - utter_ask_package
+  - bot.ActionSearchConsume
+  ...
 ```
 
 ### Interactive learning
