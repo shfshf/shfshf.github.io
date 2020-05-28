@@ -251,6 +251,7 @@ domain可以理解为机器的知识库，其中定义了意图，动作，以�
 | entities | 实体 |
 | slots | 词槽 |
 
+etc：domain.yml
 ```
 slots:
   time:
@@ -307,13 +308,79 @@ actions:
   ...
 ```
 
-### Interactive learning
+`Rasa Core`的任务是在获取到用户的意图后，选择正确的`action`，这些`action`就是定义在`domain`中以`utter_`开头的内容，
+每一个`action`会根据`templates`中的情况来返回对应的内容。
+
+### train dialogue
+```bash
+# python bot.py train-dialogue
+
+def train_dialogue(domain_file="mobile_domain.yml",
+                   model_path="projects/dialogue",
+                   training_data_file="data/mobile_story.md"):
+    agent = Agent(domain_file,
+                  policies=[MemoizationPolicy(), KerasPolicy()])
+
+    training_data = agent.load_data(training_data_file)
+    agent.train(
+        training_data,
+        epochs=200,
+        batch_size=16,
+        augmentation_factor=50,
+        validation_split=0.2
+    )
+
+    agent.persist(model_path)
+    return agent
+
+```
+执行上面的脚本 训练对话模型，训练的模型将会存储在`projects/dialogue`文件夹下
+
+### train dialogue in online mode
 
 交互式，让用户在每一次机器做出决定之后，给与反馈。
 
-对于很难手动设计的边界情况非常有效。
+原理：每次系统给出动作的时候，收集用户的 y/n 的信息，生成新的训练数据保存在`story`中，对模型`fine-tune`。
 
-原理：每次系统给出动作的时候，收集用户的 y/n 的信息，生成新的训练数据，对模型`fine-tune`。
+```bash
+# python bot.py online_train
+def run_ivrbot_online(input_channel=ConsoleInputChannel(),
+                      interpreter=RasaNLUInterpreter("projects/ivr_nlu/demo"),
+                      domain_file="mobile_domain.yml",
+                      training_data_file="data/mobile_story.md"):
+    agent = Agent(domain_file,
+                  policies=[MemoizationPolicy(), KerasPolicy()],
+                  interpreter=interpreter)
+
+    training_data = agent.load_data(training_data_file)
+    agent.train_online(training_data,
+                       input_channel=input_channel,
+                       batch_size=16,
+                       epochs=200,
+                       max_training_samples=300)
+
+    return agent
+
+```
+### test
+Run command below:
+```bash
+python bot.py run
+```
+Example1:
+```
+Bot loaded. Type a message and press enter : 
+YOU：你是谁
+BOT：您好!，我是机器人小热，很高兴为您服务。
+YOU：我想看一下消费情况
+BOT：你想查哪个时间段的
+YOU：上个月的
+BOT：好，请稍等
+BOT：您好，您上个月共消费二十八元。
+BOT：还有什么能帮您吗
+YOU：没啥了
+BOT：Bye， 下次再见
+```
 
 
 
