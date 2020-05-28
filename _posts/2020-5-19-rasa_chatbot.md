@@ -240,6 +240,19 @@ etc：
 * thanks
     - utter_answer_thanks
 ```
+### Domain
+domain可以理解为机器的知识库，其中定义了意图，动作，以及对应动作所反馈的内容。
+| 标识 | 说明 |
+| :------：| :------: |
+| intents | 意图 |
+| actions | 动作 |
+| templates | 回答模板 |
+| entities | 实体 |
+| slots | 词槽 |
+```
+
+```
+
 ### Interactive learning
 
 交互式，让用户在每一次机器做出决定之后，给与反馈。
